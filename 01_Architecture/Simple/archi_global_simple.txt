@@ -1,0 +1,119 @@
+// SOURCES
+DataSources:oval
+	API & External Data
+
+// ENCRYPTION
+Encryption:queue
+	TLS 1.3 + AES-256
+
+// TRANSACTIONAL LAYER
+/g Transactional Databases
+	OLTP:db
+		PostgreSQL
+		6 Tables
+		10M+ txn/day
+
+	NoSQL:db
+		MongoDB
+		9 Collections
+		100M+ events/day
+
+// STREAMING LAYER
+/g Streaming & CDC
+	CDC:hexagon
+		Debezium
+		Change Streams
+
+	Kafka:class
+		6 Brokers
+		48 Topics
+		Replication 3x
+
+// ORCHESTRATION
+/g Airflow Orchestration
+	ETL:diamond
+//		OLTP → OLAP
+//		DBT Transform
+
+	ELT:diamond
+//		NoSQL → OLAP
+//		Streaming
+
+// DATA WAREHOUSE
+OLAP:db
+	Snowflake
+	Star Schema
+	7 Dim + 2 Facts
+
+// ML PLATFORM
+/g ML Platform
+	FeatureStore:db
+		Feast
+		87 Features
+
+	MLModels:class
+		Fraud Detection
+		AUC 0.93
+		<100ms
+
+// ANALYTICS
+/g BI & Analytics
+	BI_Tools:service
+		PowerBI
+		Tableau
+
+// SECURITY
+/g Security & Compliance
+	Security:queue
+		GDPR
+		PCI-DSS Level 1
+		CCPA
+
+// MONITORING
+Monitoring:service
+	Prometheus
+	Grafana
+	DataDog
+
+// ============================================
+// RELATIONS - FLUX PRINCIPAUX UNIQUEMENT
+// ============================================
+
+// Main Data Flow
+DataSources --> Encryption
+Encryption --> OLTP
+Encryption --> NoSQL
+
+// CDC & Streaming
+OLTP --> CDC
+NoSQL --> CDC
+CDC --> Kafka
+
+// Orchestration
+Kafka --> ETL
+Kafka --> ELT
+
+// To Data Warehouse
+ETL --> OLAP
+ELT --> OLAP
+
+// ML Pipeline
+OLAP --> FeatureStore
+NoSQL --> FeatureStore
+FeatureStore --> MLModels
+
+// Analytics
+MLModels -.-> BI_Tools
+OLAP --> BI_Tools
+
+
+// Security & Monitoring (dotted lines)
+Security <-.- OLAP
+Security <-.- OLTP
+Security <-.- NoSQL
+
+
+Monitoring <-.- OLTP
+Monitoring <-.- Kafka
+Monitoring <-.- OLAP
+Monitoring <-.- MLModels

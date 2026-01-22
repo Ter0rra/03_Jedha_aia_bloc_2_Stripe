@@ -1,0 +1,453 @@
+// LAYER 1: DATA SOURCES
+
+// API Stripe
+// 		API Transactions
+//		Webhooks
+
+// External_Data
+// 		Market Data
+//		Reference Data
+
+// IoT_Devices
+//		Mobile Apps
+//  	Web Apps
+
+/g Data souces
+	API Stripe:oval
+	External_Data:oval
+	IoT_Devices:oval
+
+// LAYER 2: INGESTION & ENCRYPTION
+
+Encryption_Layer:queue
+	TLS 1.3
+	AES-256
+
+// LAYER 3: TRANSACTIONAL DATABASES
+
+// OLTP_PostgreSQL:db
+//		PostgreSQL 15
+//		6 Tables Normalized
+//		10M+ txn/day
+//		<30ms latency
+
+// OLTP_Replica:db
+//		Standby Read
+//		Replication
+
+// NoSQL_MongoDB:db
+//	 	MongoDB 6
+//		9 Collections
+//		Sharding Enabled
+//		100M+ events/day
+
+/g OLTP System
+	OLTP_PostgreSQL:db
+	OLTP_Replica:db
+
+NoSQL_MongoDB:db
+
+// LAYER 4: CHANGE DATA CAPTURE (CDC)
+
+// Debezium_CDC:hexagon
+//		Debezium
+//		PostgreSQL Connector
+// 		WAL Reader
+// Change_Streams:hexagon
+//		MongoDB Streams
+// 		Real-time Events
+
+/g CDC Layer
+	Debezium_CDC:hexagon
+	Change_Streams:hexagon
+
+// LAYER 5: MESSAGE STREAMING
+
+// Kafka_Brokers:class
+//		6 Brokers
+// 		48 Topics
+// 		Replication 3x
+// 		<1s latency
+
+// Kafka_Topics:service
+// 		transactions_cdc
+// 		customers_cdc
+// 		fraud_events
+// 		user_interactions
+// 		sessions_stream
+// 		ml_predictions
+
+/g Kafka Cluster
+	Kafka_Brokers:service
+	Kafka_Topics:service
+
+// Layer 6 : Orchestration (Airflow)
+
+// Airflow_Scheduler:diamond
+//		kubernetes
+// 		Ha setup
+
+/g ETL pipeline
+	ETL_DAG:hexagon
+		Extract OLTP
+		Transform DBT
+		Load OLAP
+		Schedule Daily
+/g ELT pipeline
+	ELT_DAG:hexagon
+		Extract NoSQL
+		Load Raw OLAP
+		Transform Snowflake
+		Real-time Stream
+
+/g Airflow Orchestration
+	ETL pipeline
+	ELT pipeline
+	Airflow_Scheduler:diamond
+
+// LAYER 7: TRANSFORMATION (DBT)
+
+DBT_Transformations:service
+	DBT Cloud
+	Star Schema Models
+	SCD Type 2
+	Data Quality Tests
+
+Kafka_Connect:service
+	Snowflake Connector
+	MongoDB Connector
+	Streaming Sink
+
+// LAYER 8: DATA WAREHOUSE (OLAP)
+
+// Schema_DIM:service
+// 		dim.customer
+// 		dim.merchant
+// 		dim.product
+// 		dim.payment_method
+// 		dim.date
+// 		dim.time
+// 		dim.location
+
+// Schema_FACT:service
+// 		fact.transactions
+// 		fact.fraud_scores
+
+// Schema_AGG:service
+// 		agg.revenue_daily
+// 		agg.customer_segmentation
+// 		agg.fraud_analysis
+
+// Schema_LOG:service
+// 		log.compliance_audit
+// 		log.data_retention
+
+// OLAP_snowflake:db
+//		Snowflake
+//		Star Schema
+//		7 Dimensions
+//		2 Facts
+//		Aggregates
+//		1TB+ Data
+
+/g Schemas
+	Schema_DIM:service
+	Schema_FACT:service
+	Schema_AGG:service
+	Schema_LOG:service
+
+/g Swonflake Data Warehouse
+	OLAP_snowflake:db
+	Schemas
+
+// LAYER 9: FEATURE STORE & ML
+
+// Feature_Store:db
+// 		Feast
+//		Online Redis
+//		Offline S3
+//		87 Features
+
+// ML_Training:hexagon
+//		XGBoost Training
+//		Kubeflow Pipeline
+//		GPU Instances
+//		Weekly Retrain
+
+// Model_Registry:service
+//		MLflow
+//		Model Versioning
+//		A/B Testing
+//		Champion/Challenger
+
+// ML_Serving:hexagon
+//		SageMaker Endpoint
+//		ONNX Runtime
+//		<100ms Inference
+//		Auto-scaling
+
+// ML_Monitoring:service
+//		Evidently AI
+//		Drift Detection
+//		Performance Tracking
+//		Alerting
+
+/g ML Platform
+	Feature_Store:db
+	ML_Training:hexagon
+	Model_Registry:service
+	ML_Serving:hexagon
+	ML_Monitoring:service
+
+// LAYER 10: ML MODELS
+
+// Fraud_Detection:class
+//	XGBoost
+//	AUC 0.93
+//	Precision 91%
+//	Real-time
+
+// Customer_Segmentation:class
+//	K-Means
+//	6 Segments
+//	RFM Analysis
+
+// Churn_Prediction:class
+//	LightGBM
+//	60-day Horizon
+//	AUC 0.86
+
+// LTV_Prediction:class
+//	XGBoost Regressor
+//	12-month LTV
+//	MAPE 14%
+
+/g ML Models
+	Fraud_Detection:class
+	Customer_Segmentation:class
+	Churn_Prediction:class
+	LTV_Prediction:class
+
+// LAYER 11: ANALYTICS & BI
+
+// PowerBI:service
+//	PowerBI
+//	Real-time Dashboards
+//	200+ Users
+
+// Tableau:service
+//	Tableau
+//	Executive Reports
+//	Scheduled Exports
+
+// Jupyter_Notebooks:service
+//	JupyterHub
+//	Ad-hoc Analysis
+//	Data Science
+
+/g BI & Analytics
+	PowerBI:service
+	Tableau:service
+	Jupyter_Notebooks:service
+
+// LAYER 12: BACKUP & DR
+
+// Backup_System:diamond
+//	Automated Daily
+//	PITR Enabled
+//	Multi-region
+
+// Backup_OLTP:db
+//	PostgreSQL Backup
+//	7-day Retention
+
+// Backup_OLAP:db
+//	Snowflake Time Travel
+//	90-day Retention
+
+// Backup_NoSQL:db
+//	MongoDB Snapshot
+//	30-day Retention
+
+// Backup_ML:db
+//	S3 Versioning
+//	Model Artifacts
+
+/g Backup Strategy
+	Backup_System:diamond
+	Backup_OLTP:db
+	Backup_OLAP:db
+	Backup_NoSQL:db
+	Backup_ML:db
+
+// LAYER 13: SECURITY & COMPLIANCE
+
+// Encryption:queue
+//	At Rest AES-256
+//	In Transit TLS 1.3
+//	Key Rotation
+
+// Authentication:hexagon
+//	Okta SSO
+//	MFA Mandatory
+//	RBAC
+
+// Compliance_GDPR:service
+//	GDPR Compliance
+//	Right to Erasure
+//	Pseudonymization
+//	DPIA Completed
+
+// Compliance_PCI:service
+//	PCI-DSS Level 1
+//	Tokenization
+//	No CVV Storage
+//	Quarterly Scan
+
+// Compliance_CCPA:service
+//	CCPA Compliance
+//	Data Disclosure
+//	Opt-out Mechanism
+
+// Audit_Logs:db
+//	Immutable Logs
+//	Blockchain Hash
+//	7-year Retention
+
+/g Security Layer
+	Encryption:queue
+	Authentication:hexagon
+	Compliance_GDPR:service
+	Compliance_PCI:service
+	Compliance_CCPA:service
+	Audit_Logs:db
+
+// LAYER 14: MONITORING & OBSERVABILITY
+
+// Prometheus:service
+//	Prometheus
+//	Metrics Collection
+//	Alertmanager
+
+// Grafana:service
+//	Grafana
+//	Dashboards
+//	24/7 Monitoring
+
+// ELK_Stack:service
+//	Elasticsearch
+//	Logstash
+//	Kibana
+//	Log Aggregation
+
+// DataDog:service
+//	DataDog APM
+//	Distributed Tracing
+//	Performance
+
+/g Monitoring Stack
+	Prometheus:service
+	Grafana:service
+	ELK_Stack:service
+	DataDog:service
+
+// RELATIONS - DATA FLOW
+// Sources → Encryption
+Data souces --> Encryption_Layer
+
+// Encryption → Databases
+Encryption_Layer --> OLTP_PostgreSQL
+Encryption_Layer --> NoSQL_MongoDB
+
+// OLTP Replication
+OLTP_PostgreSQL -.-> OLTP_Replica
+
+// CDC Layer
+OLTP_PostgreSQL --> Debezium_CDC
+NoSQL_MongoDB --> Change_Streams
+
+// CDC → Kafka
+Debezium_CDC --> Kafka_Brokers
+Change_Streams --> Kafka_Brokers
+
+// Kafka → Orchestration
+Kafka_Brokers --> Airflow Orchestration
+
+// Airflow → Pipelines
+Airflow_Scheduler --> ETL_DAG
+Airflow_Scheduler --> ELT_DAG
+
+// ETL Path (OLTP → OLAP)
+Airflow Orchestration --> DBT_Transformations --> Swonflake Data Warehouse
+
+
+// ELT Path (NoSQL → OLAP)
+Airflow Orchestration --> Kafka_Connect --> Swonflake Data Warehouse
+
+// OLAP & NoSQL → Feature Store
+Swonflake Data Warehouse --> Feature_Store
+NoSQL_MongoDB --> Feature_Store
+
+// ML Pipeline Flow
+Feature_Store --> ML_Training
+ML_Training --> Model_Registry
+Model_Registry --> ML_Serving
+
+// ML Models
+ML_Serving --> Fraud_Detection
+ML_Serving --> Customer_Segmentation
+ML_Serving --> Churn_Prediction
+ML_Serving --> LTV_Prediction
+
+// ML Monitoring
+ML_Serving --> ML_Monitoring --> ML_Training
+
+
+// OLAP → BI
+Swonflake Data Warehouse --> BI & Analytics
+
+// ML → BI
+Fraud_Detection -.-> BI & Analytics
+Customer_Segmentation -.-> BI & Analytics
+
+// Backup Relations
+Backup_System -.-> Backup_OLTP
+Backup_System -.-> Backup_OLAP
+Backup_System -.-> Backup_NoSQL
+Backup_System -.-> Backup_ML
+
+OLTP_PostgreSQL -.-> Backup Strategy
+Swonflake Data Warehouse -.-> Backup Strategy
+NoSQL_MongoDB -.-> Backup Strategy
+Model_Registry -.-> Backup Strategy
+
+// Security Relations
+Encryption -.-> OLTP_PostgreSQL
+Encryption -.-> NoSQL_MongoDB
+Encryption -.-> Swonflake Data Warehouse
+
+Authentication -.-> BI & Analytics
+Authentication -.-> Swonflake Data Warehouse
+
+Compliance_GDPR -.-> OLTP_PostgreSQL
+Compliance_PCI -.-> OLTP_PostgreSQL
+Compliance_CCPA -.-> Swonflake Data Warehouse
+
+OLTP_PostgreSQL --> Audit_Logs
+Swonflake Data Warehouse --> Audit_Logs
+NoSQL_MongoDB --> Audit_Logs
+
+// Monitoring Relations
+OLTP_PostgreSQL -.-> Prometheus
+Swonflake Data Warehouse -.-> Prometheus
+Kafka_Brokers -.-> Prometheus
+ML_Serving -.-> Prometheus
+
+Prometheus --> Grafana
+
+OLTP_PostgreSQL -.-> ELK_Stack
+Airflow_Scheduler -.-> ELK_Stack
+Kafka_Brokers -.-> ELK_Stack
+
+ML_Serving -.-> DataDog
+Swonflake Data Warehouse -.-> DataDog

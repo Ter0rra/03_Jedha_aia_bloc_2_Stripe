@@ -1,0 +1,78 @@
+Customers
+	customer_id uuid pk "primary key"
+	name varchar
+	first_name varchar
+	address_line_1 varchar
+	address_line_2 varchar
+	post_code varchar
+	phone varchar
+	email varchar "unique"
+	created_at timestamptz
+
+Merchant
+	merchant_id uuid pk "primary key"
+	legal_name varchar
+	address_line_1 varchar
+	address_line_2 varchar
+	post_code varchar
+	phone varchar
+	email varchar "unique"
+	created_at timestamptz
+
+Products
+	product_id uuid pk "primary key"
+	name varchar
+	description text
+	price decimal
+	category varchar
+	is_active bool
+	created_at timestamptz
+
+Payment_methods
+	payment_method_id uuid pk "primary key"
+	customer_id uuid fk "foreign key"
+	method_type varchar "card, bank_transfer, wallet"
+	card_brand varchar
+	card_last4 varchar
+	bank_account_last4 varchar
+	is_default bool
+	is_subscription bool
+	is_active bool
+	created_at timestamptz
+
+Transaction
+	transaction_id uuid pk "primary key"
+	customer_id uuid fk
+	merchant_id uuid fk
+	product_id uuid fk
+	payment_method_id uuid fk
+	amount decimal "transaction amount"
+	currency varchar "USD, EUR, GBP"
+	status varchar "pending, completed, failed, refunded"
+	transaction_type varchar "purchase, refund, subscription"
+	location varchar
+	device_type varchar "web, mobile, api"
+	created_at timestamptz
+
+Fraud
+	fraud_score_id uuid pk "primary key"
+	transaction_id uuid fk "unique"
+	customer_id uuid fk
+	merchant_id uuid fk
+	payment_method_id uuid fk
+	fraud_score decimal "0.0 to 1.0"
+	risk_level varchar "low, medium, high, critical"
+	model_version varchar
+	manual_review_required bool
+	scored_at timestamptz
+
+Customers {1}--{1..n} Fraud
+Customers {1}--{1..n} Payment_methods
+Merchant {1}--{1..n} Fraud
+Merchant {1}--{1..n} Transaction
+Customers {1}--{1..n} Transaction
+Products {1}--{1..n} Transaction
+Payment_methods {1}--{1..n} Transaction
+Transaction {1}--{1} Fraud
+Payment_methods {1}--{1..n} Fraud
+

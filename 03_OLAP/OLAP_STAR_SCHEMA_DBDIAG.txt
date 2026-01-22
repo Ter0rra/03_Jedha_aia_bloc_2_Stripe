@@ -1,0 +1,483 @@
+// STRIPE OLAP - COMPLETE STAR SCHEMA
+// Dimensions  Facts and Analytical Aggregates
+
+// ========================================
+// DIMENSIONS (Base du Star Schema)
+// ========================================
+
+Table dim.customer {
+	customer_key serial [pk, note: "surrogate key"]
+	customer_id uuid [note: "business key, unique"]
+	name varchar
+	first_name varchar
+	full_address text
+	post_code varchar
+	phone varchar
+	email varchar
+	created_at timestamptz
+	updated_at timestamptz
+}
+
+Table dim.merchant {
+	merchant_key serial [pk, note: "surrogate key"]
+	merchant_id uuid [note : "business key, unique"]
+	legal_name varchar
+	full_address text
+	post_code varchar
+	phone varchar
+	email varchar
+	created_at timestamptz
+	updated_at timestamptz
+}
+
+Table dim.product {
+	product_key serial [pk, note : "surrogate key"]
+	product_id uuid [note : "business key, unique"]
+	name varchar
+	description text
+	price decimal
+	category varchar
+	is_active bool
+	created_at timestamptz
+	updated_at timestamptz
+}
+
+Table dim.payment_method {
+	payment_method_key serial [pk, note : "surrogate key"]
+	payment_method_id uuid [note : "business key, unique"]
+	method_type varchar [note:  "card, bank_transfer, wallet"]
+	card_brand varchar
+	is_subscription bool
+	is_active bool
+	created_at timestamptz
+}
+
+Table dim.date {
+	date_key int [pk, note: "YYYYMMDD format"]
+	full_date date
+	year int
+	quarter int [note :"1-4"]
+	month int [note: "1-12"]
+	month_name varchar
+	week int [note :"1-53"]
+	day_of_month int
+	day_of_week int [note : "1-7"]
+	day_name varchar
+	is_weekend bool
+	is_holiday bool
+}
+
+Table dim.time {
+	time_key int [pk, note: "HHMMSS format"]
+	hour int [note : "0-23"]
+	minute int [note : "0-59"]
+	second int [note : "0-59"]
+	time_of_day varchar [note : "Morning, Afternoon, Evening, Night"]
+}
+
+Table dim.location {
+	location_key serial [pk, note:  "surrogate key"]
+	location varchar [note : "original location string"]
+	city varchar
+	region varchar
+	country varchar
+	country_code varchar
+}
+
+// ========================================
+// FACTS (Grain = 1 transaction)
+// ========================================
+
+Table fact.transactions {
+	transaction_key serial [pk, not null]
+	transaction_id uuid [note: 'fk']
+	customer_key int [note: 'fk']
+	merchant_key int [note: 'fk']
+	product_key int [note: 'fk']
+	payment_method_key int [note: 'fk']
+	date_key int [note: 'fk']
+	time_key int [note: 'fk']
+	location_key int [note: 'fk']
+	amount decimal 
+	currency varchar
+	status varchar 
+	transaction_type varchar 
+	device_type varchar
+	is_successful bool
+	is_refund bool
+	created_at timestamptz
+}
+
+Table fact.fraud_scores {
+	fraud_score_key serial pk
+	fraud_score_id uuid [note: 'fk']
+	transaction_key int [note: 'fk'] 
+	customer_key int [note: 'fk']
+	merchant_key int [note: 'fk']
+	payment_method_key int [note: 'fk']
+	date_key int [note: 'fk']
+	time_key int [note: 'fk']
+	fraud_score decimal
+	risk_level varchar [note : "low, medium, high, critical"]
+	model_version varchar
+	manual_review_required bool
+	scored_at timestamptz
+}
+
+// ========================================
+// REFERENCE DATA (Slowly Changing)
+// ========================================
+
+Table refd.countries {
+	country_code varchar [pk, note:  "ISO 3166"]
+	country_name varchar
+	region varchar
+	continent varchar
+	currency_code varchar
+	phone_prefix varchar
+	is_active bool
+}
+
+Table refd.currency_rates {
+	rate_id serial [pk]
+	from_currency varchar [unique, note : "EUR, USD, GBP"]
+	to_currency varchar unique
+	exchange_rate decimal [note : "conversion rate"]
+	rate_date date unique
+	source varchar
+}
+
+Table refd.merchant_categories {
+	category_code varchar [pk]
+	category_name varchar
+	description text
+	risk_level varchar [note: "low, medium, high"]
+	compliance_requirements text
+	is_active bool
+}
+
+Table refd.product_categories {
+	category_id serial [pk]
+	category_code varchar [unique]
+	category_name varchar
+	parent_category_id int [note : "self-reference"]
+	description text
+	tax_rate decimal
+	is_digital bool
+	requires_shipping bool
+	is_active bool
+}
+
+Table refd.payment_method_types {
+	method_type_code varchar [pk]
+	method_type_name varchar
+	typical_processing_time varchar
+	average_fee_percentage decimal
+	chargeback_risk varchar
+	supports_refunds bool
+	supports_recurring bool
+	is_active bool
+}
+
+// ========================================
+// ANALYTICAL AGGREGATES
+// 1. Revenue Metrics
+// ========================================
+
+Table agg.revenue_daily {
+	date_key int pk
+	date date
+	total_transactions int
+	total_revenue decimal
+	total_refunds decimal
+	net_revenue decimal
+	avg_transaction_amount decimal
+	unique_customers int
+	unique_merchants int
+	calculated_at timestamptz
+}
+
+Table agg.revenue_weekly {
+	week_key int [pk, note: "YYYYWW"]
+	year int
+	week_number int
+	week_start_date date
+	week_end_date date
+	total_transactions int
+	total_revenue decimal
+	total_refunds decimal
+	net_revenue decimal
+	avg_transaction_amount decimal
+	unique_customers int
+	unique_merchants int
+	calculated_at timestamptz
+}
+
+Table agg.revenue_monthly {
+	month_key int [pk, note: "YYYYMM"]
+	year int
+	month int
+	month_name varchar
+	total_transactions int
+	total_revenue decimal
+	total_refunds decimal
+	net_revenue decimal
+	avg_transaction_amount decimal
+	unique_customers int
+	unique_merchants int
+	growth_rate decimal [note: "vs previous month"]
+	calculated_at timestamptz
+}
+
+
+// ========================================
+// ANALYTICAL AGGREGATES
+// 2. Customer Segmentation
+// ========================================
+
+Table agg.customer_segmentation {
+	customer_id uuid pk
+	customer_key int [note: 'fk']
+	segment varchar
+	rfm_score int 
+	recency_score int 
+	frequency_score int 
+	monetary_score int 
+	lifetime_value decimal
+	total_transactions int
+	total_spent decimal
+	avg_transaction_amount decimal
+	first_transaction_date date
+	last_transaction_date date
+	days_since_last_transaction int
+	customer_tenure_days int
+	churn_probability decimal
+	predicted_lifetime_value decimal
+	preferred_payment_method varchar
+	preferred_device varchar
+	calculated_at timestamptz
+}
+
+Table agg.customer_cohort_analysis {
+	cohort_month varchar [pk, note: "YYYY-MM"]
+	customer_count int
+	month_0_retention int
+	month_1_retention int
+	month_2_retention int
+	month_3_retention int
+	month_6_retention int
+	month_12_retention int
+	cohort_revenue decimal
+	cohort_avg_ltv decimal
+	calculated_at timestamptz
+}
+
+// ========================================
+// ANALYTICAL AGGREGATES
+// 3. Product Performance
+// ========================================
+
+Table agg.product_performance {
+	product_id uuid pk
+	product_key int [note: 'fk']
+	category varchar
+	price decimal
+	total_units_sold int
+	total_revenue decimal
+	total_refunds int
+	net_revenue decimal
+	unique_customers int
+	unique_merchants int
+	avg_rating decimal
+	conversion_rate decimal
+	return_rate decimal
+	profit_margin decimal
+	sales_trend varchar [note: "growing, stable, declining"]
+	calculated_at timestamptz
+}
+
+Table agg.product_category_performance {
+	category varchar pk
+	total_products int
+	active_products int
+	total_units_sold int
+	total_revenue decimal
+	avg_price decimal
+	top_product_id uuid
+	top_product_name varchar
+	calculated_at timestamptz
+}
+
+Table agg.product_sales_by_period {
+	product_id uuid [note: 'fk']
+	product_key int [note: 'fk']
+	date_key int [note: 'fk']
+	date date
+	units_sold int
+	revenue decimal
+	refunds int
+	net_revenue decimal
+	unique_customers int
+}
+
+// ========================================
+// ANALYTICAL AGGREGATES
+// 4. Fraud Analysis
+// ========================================
+
+Table agg.fraud_analysis_summary {
+	date_key int pk
+	date date
+	total_transactions int
+	flagged_transactions int
+	confirmed_fraud int
+	false_positives int
+	fraud_rate decimal
+	avg_fraud_score decimal
+	high_risk_transactions int
+	manual_reviews_required int
+	manual_reviews_completed int
+	total_fraud_amount decimal
+	prevented_fraud_amount decimal
+	calculated_at timestamptz
+}
+
+Table agg.fraud_patterns {
+	pattern_id serial pk
+	pattern_type varchar [note: "velocity, amount, location, device, time"]
+	pattern_description text
+	detection_count int
+	true_positive_rate decimal
+	false_positive_rate decimal
+	avg_fraud_score decimal
+	first_detected timestamptz
+	last_detected timestamptz
+	is_active bool
+}
+
+Table agg.fraud_by_merchant {
+	merchant_id uuid [note: 'fk']
+	merchant_key int [note: 'fk']
+	date_key int [note: 'fk']
+	total_transactions int
+	flagged_transactions int
+	confirmed_fraud int
+	fraud_rate decimal
+	avg_fraud_score decimal
+	total_fraud_amount decimal
+	calculated_at timestamptz
+}
+
+Table agg.fraud_by_payment_method {
+	payment_method_type varchar [note: 'fk']
+	date_key int [note: 'fk']
+	total_transactions int
+	flagged_transactions int
+	confirmed_fraud int
+	fraud_rate decimal
+	avg_fraud_score decimal
+	calculated_at timestamptz
+}
+
+// ========================================
+// ANALYTICAL AGGREGATES
+// 5. Compliance & Audit
+// ========================================
+
+
+Table log.compliance_audit_log {
+	audit_id serial pk
+	event_type varchar [note : "transaction, user_action, system_event, fraud_check"]
+	entity_type varchar [note : "customer, merchant, transaction, payment_method"]
+	entity_id uuid
+	action varchar [note : "create, update, delete, review, approve, reject"]
+	performed_by varchar [note : "user_id or system"]
+	event_timestamp timestamptz
+	event_details jsonb [note : "flexible JSON"]
+	ip_address varchar
+	user_agent varchar
+	compliance_status varchar [note : "compliant, flagged, under_review"]
+	reviewer_notes text
+	resolved_at timestamptz
+}
+
+Table log.regulatory_reports {
+	report_id serial pk
+	report_type varchar [note : "AML, KYC, PCI_DSS, GDPR"]
+	report_period varchar [note : "YYYY-MM"]
+	total_transactions int
+	flagged_transactions int
+	high_risk_customers int
+	suspicious_activities int
+	regulatory_breaches int
+	remediation_actions text
+	report_generated_at timestamptz
+	report_status varchar [note : "draft, submitted, approved"]
+	submitted_to varchar [note : "regulatory body"]
+}
+
+Table log.data_retention_log {
+	retention_id serial pk
+	table_name varchar
+	record_id uuid
+	retention_policy varchar [note : "1_year, 7_years, indefinite"]
+	created_at timestamptz
+	scheduled_deletion_date date
+	deletion_status varchar [note : "active, scheduled, deleted, retained"]
+	deletion_reason text
+	deleted_at timestamptz
+	deleted_by varchar
+}
+
+Table log.access_audit_log {
+	access_id serial pk
+	user_id uuid
+	user_email varchar
+	access_type varchar [note : "read, write, delete, export"]
+	table_name varchar
+	record_id uuid
+	access_timestamp timestamptz
+	ip_address varchar
+	access_granted bool
+	denial_reason varchar
+	sensitive_data_accessed bool
+}
+
+// ========================================
+// RELATIONS - STAR SCHEMA
+// ========================================
+
+Ref : dim.customer.customer_key < fact.transactions.customer_key
+Ref : dim.merchant.merchant_key < fact.transactions.merchant_key
+Ref : dim.product.product_key < fact.transactions.product_key
+Ref : dim.payment_method.payment_method_key < fact.transactions.payment_method_key
+Ref : dim.date.date_key < fact.transactions.date_key
+Ref : dim.time.time_key < fact.transactions.time_key
+Ref : dim.location.location_key < fact.transactions.location_key
+
+
+Ref :dim.customer.customer_key < fact.fraud_scores.customer_key
+Ref :dim.merchant.merchant_key < fact.fraud_scores.merchant_key
+Ref :dim.payment_method.payment_method_key  < fact.fraud_scores.payment_method_key 
+Ref :dim.date.date_key < fact.fraud_scores.date_key
+Ref :dim.time.time_key < fact.fraud_scores.time_key
+Ref :fact.transactions.transaction_key - fact.fraud_scores.transaction_key
+
+
+Ref : dim.customer.customer_key - agg.customer_segmentation.customer_key
+Ref : dim.product.product_key - agg.product_performance.product_key
+Ref : dim.product.product_key < agg.product_sales_by_period.product_key
+Ref : dim.date.date_key < agg.product_sales_by_period.date_key
+Ref : dim.merchant.merchant_key < agg.fraud_by_merchant.merchant_key
+Ref : dim.date.date_key < agg.fraud_by_merchant.date_key
+Ref : dim.date.date_key < agg.fraud_by_payment_method.date_key
+Ref : dim.date.date_key < agg.revenue_daily.date_key
+Ref : dim.date.date_key < agg.revenue_weekly.week_key
+Ref : dim.date.date_key < agg.revenue_monthly.month_key
+
+Ref : refd.countries.country_code < dim.location.country_code
+Ref : refd.payment_method_types.method_type_code < dim.payment_method.method_type
+Ref : refd.product_categories.category_code < dim.product.category
+Ref : refd.product_categories.parent_category_id < refd.product_categories.category_code
+Ref : refd.merchant_categories.category_code < dim.merchant.merchant_id
+
