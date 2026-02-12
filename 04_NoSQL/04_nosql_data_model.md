@@ -42,28 +42,28 @@ Le système NoSQL MongoDB de Stripe est conçu pour :
 ### 1.3 Architecture globale
 
 ```
-┌─────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────┐
 │                    MongoDB Cluster (NoSQL)                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Logs DB    │  │  Analytics   │  │   ML Data    │      │
-│  │              │  │      DB      │  │      DB      │      │
-│  │ • system_logs│  │ • user_      │  │ • fraud_     │      │
-│  │ • api_logs   │  │   interactions│  │   features   │      │
-│  │ • error_logs │  │ • sessions   │  │ • model_     │      │
-│  │              │  │ • clickstream│  │   predictions│      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐                        │
-│  │ Customer DB  │  │   Events DB  │                        │
-│  │              │  │              │                        │
-│  │ • feedback   │  │ • webhook_   │                        │
-│  │ • surveys    │  │   events     │                        │
-│  │ • reviews    │  │ • audit_trail│                        │
-│  └──────────────┘  └──────────────┘                        │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────┐  ┌───────────────┐ ┌──────────────┐        │
+│  │   Logs DB    │  │  Analytics    │ │   ML Data    │        │
+│  │              │  │      DB       │ │      DB      │        │
+│  │ • system_logs│  │ • user_       │ │ • fraud_     │        │
+│  │ • api_logs   │  │   interactions│ │   features   │        │
+│  │ • error_logs │  │ • sessions    │ │ • model_     │        │
+│  │              │  │ • clickstream │ │   predictions│        │
+│  └──────────────┘  └───────────────┘ └──────────────┘        │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐                          │
+│  │ Customer DB  │  │   Events DB  │                          │
+│  │              │  │              │                          │
+│  │ • feedback   │  │ • webhook_   │                          │
+│  │ • surveys    │  │   events     │                          │
+│  │ • reviews    │  │ • audit_trail│                          │
+│  └──────────────┘  └──────────────┘                          │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
          ↕                    ↕                    ↕
     ETL/ELT              Real-time             Change Data
     Pipeline              Kafka               Capture (CDC)
