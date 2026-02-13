@@ -326,13 +326,3 @@ cat 08_queries_SQL_NoSQL/08_sql_nosql_queries.md
 
 ---
 
-## 📞 Contact
-
-**Auteur** : Terorra  
-**Rôle** : Deep Learning Engineer  
-**Certification** : AIA (Artificial Intelligence Architect)  
-**Date** : Janvier 2026
-
----
-
-**Prêt pour la certification AIA ! 🎓🚀**
