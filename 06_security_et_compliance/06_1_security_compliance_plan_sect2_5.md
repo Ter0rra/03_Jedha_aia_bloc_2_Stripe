@@ -2,14 +2,13 @@
 ## Complément au Document Principal
 
 **Document** : 06_1_security_compliance_plan.md  
-**Sections** : 2, 3, 4, 5 (manquantes dans le document original)  
-**Date** : Janvier 2026
+**Sections** : 2, 3, 4, 5 
 
 ---
 
 ## 📋 Note
 
-Les sections 2-5 étaient absentes du document original. Ce fichier les complète.
+Les sections 2-5 du document 06_1_security_compliance_plan.md
 
 **Sections** :
 - Section 2 : Framework de sécurité
@@ -790,9 +789,6 @@ log_retention_policy:
 
 **FIN DES SECTIONS 2-5**
 
-Ces sections complètent le document `06_1_security_compliance_plan.md` qui commençait directement à la section 6.
-
-Le document complet est maintenant structuré :
 - Section 1 : Vue d'ensemble ✅
 - Section 2 : Framework de sécurité ✅ (CE FICHIER)
 - Section 3 : Chiffrement des données ✅ (CE FICHIER)
