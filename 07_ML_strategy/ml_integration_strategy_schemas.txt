@@ -1,0 +1,142 @@
+// ML INTEGRATION PIPELINE - STRIPE FRAUD DETECTION
+// 4 phases : Feature Engineering  Training → Serving → Monitoring
+
+// ============================================
+// PHASE 1: FEATURE ENGINEERING
+// ============================================
+
+Snowflake:db
+	label: "Snowflake OLAP"
+	info: "1TB+ transactions - Star schema"
+
+DBT:class
+	label: "DBT Transformations"
+	note: "SQL feature engineering - Tests + Documentation"
+
+Feast_Offline:service
+	label: "Feast Feature Store - (Offline)"
+	note: "S3 Parquet - Training features"
+
+Feast_Online:service
+	label: "Feast Feature Store - (Online)"
+	note: "Redis - Inference features - <10ms latency"
+
+Snowflake --> DBT
+DBT --> Feast_Offline
+DBT --> Feast_Online
+
+// ============================================
+// PHASE 2: TRAINING
+// ============================================
+
+Jupyter:diamond
+	label: "Jupyter Notebooks"
+	note: "Data scientists - Experiments"
+
+Training_Job:class
+	label: "Training Job - (Kubernetes)"
+	note: "XGBoost LightGBM GPU: NVIDIA T4 50+ experiments"
+
+MLflow_Tracking:service
+	label: "MLflow Tracking"
+	note: "Experiments Metrics (AUC, Precision) Parameters Artifacts"
+
+MLflow_Registry:service
+	label: "MLflow Model Registry"
+	note: "Versions: v1, v2, v3... Staging  Production Rollback capability"
+
+Feast_Offline --> Jupyter
+Jupyter --> Training_Job
+Training_Job --> MLflow_Tracking
+Training_Job --> MLflow_Registry
+
+// ============================================
+// PHASE 3: SERVING (DEPLOYMENT)
+// ============================================
+
+Docker_Image:class
+	label: "Docker Image"
+	note: "Model & dependencies fraud_detection:v23"
+
+Kubernetes:class
+	label: "Kubernetes Cluster"
+	note: "Auto-scaling 1-10 pods HA + Load balancing"
+
+Inference_API:diamond
+	label: "FastAPI Service"
+	 note: "REST endpoint .predict <100ms P95"
+
+MLflow_Registry --> Docker_Image
+Docker_Image --> Kubernetes
+Kubernetes --> Inference_API
+
+// ============================================
+// PHASE 4: INFERENCE (REAL-TIME)
+// ============================================
+
+Kafka_Transactions:actor
+	label: "Kafka Topic (transactions)"
+
+Feature_Enrichment:actor
+	label: "Feature Enrichment"
+	note: "Feast online store Velocity features Device fingerprint"
+
+ML_Prediction:class
+	label: "ML Prediction"
+	note: "fraud_probability: 0.85 risk_level: high latency: 85ms"
+
+Decision_Engine:service
+	label: "Decision Engine"
+  
+Kafka_Transactions --> Feature_Enrichment
+Feast_Online --> Feature_Enrichment
+Feature_Enrichment --> Inference_API
+Inference_API --> ML_Prediction
+ML_Prediction --> Decision_Engine
+
+// ============================================
+// PHASE 5: MONITORING (CONTINUOUS)
+// ============================================
+
+Predictions_Store:db
+	label: "Predictions Store (S3 + PostgreSQL)"
+	note: "prediction_id features prediction"
+
+Evidently_AI:actor
+	label: "Evidently AI"
+	note: "Data drift Concept drift Prediction drift"
+
+Grafana:actor
+	label: "Grafana Dashboard"
+	note: "AUC trend Latency P95 Throughput"
+
+Alerting:actor
+	label: "AlertManager"
+	note: "Drift > 30% - Slack AUC drop > 5% - PagerDuty"
+
+Retrain_Trigger:service
+	label: "Retrain Trigger (Airflow DAG)"
+	note: "Automatic retraining if drift detected"
+
+ML_Prediction --> Predictions_Store
+Predictions_Store --> Evidently_AI
+Evidently_AI --> Grafana
+Evidently_AI --> Alerting
+Alerting --> Retrain_Trigger
+Retrain_Trigger -.-> Training_Job 
+
+// ============================================
+// FEEDBACK LOOP
+// ============================================
+
+Fraud_Labels:note
+	label: "Fraud Labels (Ground Truth)"
+	note: "Manual review Chargeback data"
+
+Performance_Metrics:note
+	label: "Performance Calculator"
+	note: "TP, FP, FN AUC, Precision"
+
+Fraud_Labels --> Performance_Metrics
+Performance_Metrics --> Evidently_AI
+Performance_Metrics --> Feast_Offline 
